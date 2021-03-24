@@ -54,10 +54,11 @@ struct config_state_set : config_state<S>
         }
     }
 
-    inline void add(const config_state<S> *state) noexcept
+    config_state_set &add(const config_state<S> *state)
     {
         assert(state);
         states_.push_back(state);
+        return *this;
     }
 
     bool get(const rapidjson::Value &root, S &inst) const final
