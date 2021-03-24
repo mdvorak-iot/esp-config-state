@@ -32,77 +32,6 @@ struct config_state
     virtual esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const = 0;
 };
 
-template<typename S>
-struct config_state_set : config_state<S>
-{
-    config_state_set() = default;
-    config_state_set(const config_state_set &) = delete;
-
-    ~config_state_set() override
-    {
-        for (auto state : states_)
-        {
-            delete state;
-        }
-    }
-
-    config_state_set &add(const config_state<S> *state)
-    {
-        assert(state);
-        states_.push_back(state);
-        return *this;
-    }
-
-    bool get(const rapidjson::Value &root, S &inst) const final
-    {
-        bool changed = false;
-        for (auto state : states_)
-        {
-            changed |= state->get(root, inst);
-        }
-        return changed;
-    }
-
-    void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const S &inst) const final
-    {
-        for (auto state : states_)
-        {
-            state->set(root, allocator, inst);
-        }
-    }
-
-    esp_err_t load(nvs::NVSHandle &handle, const char *prefix, S &inst) const final
-    {
-        esp_err_t last_err = ESP_OK;
-        for (auto state : states_)
-        {
-            esp_err_t err = state->load(handle, prefix, inst);
-            if (err != ESP_OK && (err != ESP_ERR_NVS_NOT_FOUND || last_err == ESP_OK)) // Don't overwrite more important error with NOT_FOUND
-            {
-                last_err = err;
-            }
-        }
-        return last_err;
-    }
-
-    esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const final
-    {
-        esp_err_t last_err = ESP_OK;
-        for (auto state : states_)
-        {
-            esp_err_t err = state->store(handle, prefix, inst);
-            if (err != ESP_OK)
-            {
-                last_err = err;
-            }
-        }
-        return last_err;
-    }
-
- private:
-    std::vector<const config_state<S> *> states_;
-};
-
 template<typename T>
 struct config_state_helper
 {
@@ -381,4 +310,93 @@ struct config_state_list : config_state<S>
         }
         return last_err;
     }
+};
+
+template<typename S>
+struct config_state_set : config_state<S>
+{
+    config_state_set() = default;
+    config_state_set(const config_state_set &) = delete;
+
+    ~config_state_set() override
+    {
+        for (auto state : states_)
+        {
+            delete state;
+        }
+    }
+
+    config_state_set &add(const config_state<S> *state)
+    {
+        assert(state);
+        states_.push_back(state);
+        return *this;
+    }
+
+    template<typename T>
+    config_state_set &add_field(const char *json_ptr, T S::*field)
+    {
+        return add(new config_state_field<S, T>(json_ptr, field));
+    }
+
+    template<typename T>
+    config_state_set &add_list(const char *json_ptr, std::vector<T> S::*field, const config_state<T> *element)
+    {
+        return add(new config_state_list<S, T>(json_ptr, field, element));
+    }
+
+    template<typename T>
+    config_state_set &add_value_list(const char *json_ptr, std::vector<T> S::*field)
+    {
+        return add(new config_state_list<S, T>(json_ptr, field, new config_state_value<T>));
+    }
+
+    bool get(const rapidjson::Value &root, S &inst) const final
+    {
+        bool changed = false;
+        for (auto state : states_)
+        {
+            changed |= state->get(root, inst);
+        }
+        return changed;
+    }
+
+    void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const S &inst) const final
+    {
+        for (auto state : states_)
+        {
+            state->set(root, allocator, inst);
+        }
+    }
+
+    esp_err_t load(nvs::NVSHandle &handle, const char *prefix, S &inst) const final
+    {
+        esp_err_t last_err = ESP_OK;
+        for (auto state : states_)
+        {
+            esp_err_t err = state->load(handle, prefix, inst);
+            if (err != ESP_OK && (err != ESP_ERR_NVS_NOT_FOUND || last_err == ESP_OK)) // Don't overwrite more important error with NOT_FOUND
+            {
+                last_err = err;
+            }
+        }
+        return last_err;
+    }
+
+    esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const final
+    {
+        esp_err_t last_err = ESP_OK;
+        for (auto state : states_)
+        {
+            esp_err_t err = state->store(handle, prefix, inst);
+            if (err != ESP_OK)
+            {
+                last_err = err;
+            }
+        }
+        return last_err;
+    }
+
+ private:
+    std::vector<const config_state<S> *> states_;
 };
