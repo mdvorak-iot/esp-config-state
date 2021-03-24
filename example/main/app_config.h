@@ -9,6 +9,9 @@ struct app_config
     gpio_num_t pin = GPIO_NUM_NC;
     std::string str;
 
+    std::vector<int> num_list;
+    std::vector<std::string> str_list;
+
     // TODO list, other types
 
     static const config_state<app_config> *const STATE;

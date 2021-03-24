@@ -7,7 +7,8 @@ static app_config config;
 
 extern "C" void app_main()
 {
-    //app_config::STATE->get(config);
+    rapidjson::Document doc;
+    app_config::STATE->get(config, doc);
 
     // Setup complete
     ESP_LOGI(TAG, "started");

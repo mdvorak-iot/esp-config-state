@@ -25,11 +25,11 @@ struct config_state
      * @param root JSON root object
      * @return true if value has changed, false otherwise
      */
-    virtual bool get(const rapidjson::Value &root, S &inst) const = 0;
-    virtual void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const S &inst) const = 0;
+    virtual bool get(S &inst, const rapidjson::Value &root) const = 0;
+    virtual void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const = 0;
 
-    virtual esp_err_t load(nvs::NVSHandle &handle, const char *prefix, S &inst) const = 0;
-    virtual esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const = 0;
+    virtual esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
+    virtual esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
 };
 
 template<typename T>
@@ -130,22 +130,22 @@ struct config_state_field : config_state<S>
         assert(field);
     }
 
-    bool get(const rapidjson::Value &root, S &inst) const final
+    bool get(S &inst, const rapidjson::Value &root) const final
     {
         return config_state_helper<T>::get(ptr, root, inst.*field);
     }
 
-    void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const S &inst) const final
+    void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         config_state_helper<T>::set(ptr, root, allocator, inst.*field);
     }
 
-    esp_err_t load(nvs::NVSHandle &handle, const char *prefix, S &inst) const final
+    esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::load(key, handle, prefix, inst.*field);
     }
 
-    esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const final
+    esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::store(key, handle, prefix, inst.*field);
     }
@@ -163,22 +163,27 @@ struct config_state_value : config_state<T>
     {
     }
 
-    bool get(const rapidjson::Value &root, T &inst) const final
+    config_state_value()
+        : config_state_value("")
+    {
+    }
+
+    bool get(T &inst, const rapidjson::Value &root) const final
     {
         return config_state_helper<T>::get(ptr, root, inst);
     }
 
-    void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const T &inst) const final
+    void set(const T &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         config_state_helper<T>::set(ptr, root, allocator, inst);
     }
 
-    esp_err_t load(nvs::NVSHandle &handle, const char *prefix, T &inst) const final
+    esp_err_t load(T &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::load(key, handle, prefix, inst);
     }
 
-    esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const T &inst) const final
+    esp_err_t store(const T &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::store(key, handle, prefix, inst);
     }
@@ -202,7 +207,7 @@ struct config_state_list : config_state<S>
         assert(element);
     }
 
-    bool get(const rapidjson::Value &root, S &inst) const final
+    bool get(S &inst, const rapidjson::Value &root) const final
     {
         const rapidjson::Value *list = ptr.Get(root);
         if (!list || !list->IsArray())
@@ -222,12 +227,12 @@ struct config_state_list : config_state<S>
         bool changed = false;
         for (size_t i = 0; i < length; i++)
         {
-            changed |= element->get(array[i], items[i]);
+            changed |= element->get(items[i], array[i]);
         }
         return changed;
     }
 
-    void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const S &inst) const final
+    void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         auto &array = ptr.Create(root, allocator);
         if (!array.IsArray())
@@ -253,11 +258,11 @@ struct config_state_list : config_state<S>
         // Set each
         for (size_t i = 0; i < len; i++)
         {
-            element->set(array[i], allocator, items[i]);
+            element->set(items[i], array[i], allocator);
         }
     }
 
-    esp_err_t load(nvs::NVSHandle &handle, const char *prefix, S &inst) const final
+    esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         char item_prefix[16] = {};
         if (!prefix) prefix = "";
@@ -277,7 +282,7 @@ struct config_state_list : config_state<S>
         for (size_t i = 0; i < items.size(); i++)
         {
             std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%uz", prefix, key.c_str(), i);
-            esp_err_t err = element->load(handle, config_state_nvs_key(item_prefix), items[i]);
+            esp_err_t err = element->load(items[i], handle, config_state_nvs_key(item_prefix));
             if (err != ESP_OK && (err != ESP_ERR_NVS_NOT_FOUND || last_err == ESP_OK)) // Don't overwrite more important error with NOT_FOUND
             {
                 last_err = err;
@@ -286,7 +291,7 @@ struct config_state_list : config_state<S>
         return last_err;
     }
 
-    esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const final
+    esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         char item_prefix[16] = {};
         if (!prefix) prefix = "";
@@ -302,7 +307,7 @@ struct config_state_list : config_state<S>
         for (size_t i = 0; i < items.size(); i++)
         {
             std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%uz", prefix, key.c_str(), i);
-            esp_err_t err = element->store(handle, config_state_nvs_key(item_prefix), items[i]);
+            esp_err_t err = element->store(items[i], handle, config_state_nvs_key(item_prefix));
             if (err != ESP_OK)
             {
                 last_err = err;
@@ -351,30 +356,30 @@ struct config_state_set : config_state<S>
         return add(new config_state_list<S, T>(json_ptr, field, new config_state_value<T>));
     }
 
-    bool get(const rapidjson::Value &root, S &inst) const final
+    bool get(S &inst, const rapidjson::Value &root) const final
     {
         bool changed = false;
         for (auto state : states_)
         {
-            changed |= state->get(root, inst);
+            changed |= state->get(inst, root);
         }
         return changed;
     }
 
-    void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const S &inst) const final
+    void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         for (auto state : states_)
         {
-            state->set(root, allocator, inst);
+            state->set(inst, root, allocator);
         }
     }
 
-    esp_err_t load(nvs::NVSHandle &handle, const char *prefix, S &inst) const final
+    esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         esp_err_t last_err = ESP_OK;
         for (auto state : states_)
         {
-            esp_err_t err = state->load(handle, prefix, inst);
+            esp_err_t err = state->load(inst, handle, prefix);
             if (err != ESP_OK && (err != ESP_ERR_NVS_NOT_FOUND || last_err == ESP_OK)) // Don't overwrite more important error with NOT_FOUND
             {
                 last_err = err;
@@ -383,12 +388,12 @@ struct config_state_set : config_state<S>
         return last_err;
     }
 
-    esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const final
+    esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         esp_err_t last_err = ESP_OK;
         for (auto state : states_)
         {
-            esp_err_t err = state->store(handle, prefix, inst);
+            esp_err_t err = state->store(inst, handle, prefix);
             if (err != ESP_OK)
             {
                 last_err = err;
