@@ -3,6 +3,13 @@
 #include "config_state.h"
 #include "config_state_gpio.h"
 
+struct app_config_obj
+{
+    std::vector<uint32_t> ids;
+
+    static const config_state<app_config_obj> *const STATE;
+};
+
 struct app_config
 {
     int num = 0;
@@ -11,8 +18,7 @@ struct app_config
 
     std::vector<int> num_list;
     std::vector<std::string> str_list;
-
-    // TODO list, other types
+    std::vector<app_config_obj> obj_list;
 
     static const config_state<app_config> *const STATE;
 };
