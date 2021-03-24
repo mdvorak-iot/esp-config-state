@@ -25,8 +25,8 @@ struct config_state
      * @param root JSON root object
      * @return true if value has changed, false otherwise
      */
-    virtual bool get(S &inst, const rapidjson::Value &root) const = 0;
-    virtual void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const = 0;
+    virtual bool read(S &inst, const rapidjson::Value &root) const = 0;
+    virtual void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const = 0;
 
     virtual esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
     virtual esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
@@ -44,7 +44,7 @@ struct config_state_helper
      * @param value Value reference
      * @return true if value has changed, false otherwise
      */
-    static bool get(const rapidjson::Pointer &ptr, const rapidjson::Value &root, T &value)
+    static bool read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, T &value)
     {
         // Find object
         const rapidjson::Value *obj = ptr.Get(root);
@@ -63,7 +63,7 @@ struct config_state_helper
         return false;
     }
 
-    static void set(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const T &value)
+    static void write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const T &value)
     {
         ptr.Set<T>(root, value, allocator);
     }
@@ -92,10 +92,10 @@ struct config_state_helper
 };
 
 template<>
-bool config_state_helper<std::string>::get(const rapidjson::Pointer &ptr, const rapidjson::Value &root, std::string &value);
+bool config_state_helper<std::string>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, std::string &value);
 
 template<>
-void config_state_helper<std::string>::set(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const std::string &value);
+void config_state_helper<std::string>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const std::string &value);
 
 template<>
 esp_err_t config_state_helper<std::string>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, std::string &value);
@@ -130,14 +130,14 @@ struct config_state_field : config_state<S>
         assert(field);
     }
 
-    bool get(S &inst, const rapidjson::Value &root) const final
+    bool read(S &inst, const rapidjson::Value &root) const final
     {
-        return config_state_helper<T>::get(ptr, root, inst.*field);
+        return config_state_helper<T>::read(ptr, root, inst.*field);
     }
 
-    void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
-        config_state_helper<T>::set(ptr, root, allocator, inst.*field);
+        config_state_helper<T>::write(ptr, root, allocator, inst.*field);
     }
 
     esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
@@ -168,14 +168,14 @@ struct config_state_value : config_state<T>
     {
     }
 
-    bool get(T &inst, const rapidjson::Value &root) const final
+    bool read(T &inst, const rapidjson::Value &root) const final
     {
-        return config_state_helper<T>::get(ptr, root, inst);
+        return config_state_helper<T>::read(ptr, root, inst);
     }
 
-    void set(const T &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void write(const T &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
-        config_state_helper<T>::set(ptr, root, allocator, inst);
+        config_state_helper<T>::write(ptr, root, allocator, inst);
     }
 
     esp_err_t load(T &inst, nvs::NVSHandle &handle, const char *prefix) const final
@@ -207,7 +207,7 @@ struct config_state_list : config_state<S>
         assert(element);
     }
 
-    bool get(S &inst, const rapidjson::Value &root) const final
+    bool read(S &inst, const rapidjson::Value &root) const final
     {
         const rapidjson::Value *list = ptr.Get(root);
         if (!list || !list->IsArray())
@@ -227,12 +227,12 @@ struct config_state_list : config_state<S>
         bool changed = false;
         for (size_t i = 0; i < length; i++)
         {
-            changed |= element->get(items[i], array[i]);
+            changed |= element->read(items[i], array[i]);
         }
         return changed;
     }
 
-    void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         auto &array = ptr.Create(root, allocator);
         if (!array.IsArray())
@@ -258,7 +258,7 @@ struct config_state_list : config_state<S>
         // Set each
         for (size_t i = 0; i < len; i++)
         {
-            element->set(items[i], array[i], allocator);
+            element->write(items[i], array[i], allocator);
         }
     }
 
@@ -356,21 +356,21 @@ struct config_state_set : config_state<S>
         return add(new config_state_list<S, T>(json_ptr, field, new config_state_value<T>));
     }
 
-    bool get(S &inst, const rapidjson::Value &root) const final
+    bool read(S &inst, const rapidjson::Value &root) const final
     {
         bool changed = false;
         for (auto state : states_)
         {
-            changed |= state->get(inst, root);
+            changed |= state->read(inst, root);
         }
         return changed;
     }
 
-    void set(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         for (auto state : states_)
         {
-            state->set(inst, root, allocator);
+            state->write(inst, root, allocator);
         }
     }
 

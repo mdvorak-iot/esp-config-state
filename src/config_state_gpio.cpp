@@ -1,10 +1,10 @@
 #include "config_state_gpio.h"
 
 template<>
-bool config_state_helper<gpio_num_t>::get(const rapidjson::Pointer &ptr, const rapidjson::Value &root, gpio_num_t &value)
+bool config_state_helper<gpio_num_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, gpio_num_t &value)
 {
     int num = value;
-    bool changed = config_state_helper<int>::get(ptr, root, num);
+    bool changed = config_state_helper<int>::read(ptr, root, num);
     // TODO validate pin?
     value = static_cast<gpio_num_t>(num);
     return changed;

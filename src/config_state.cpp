@@ -13,7 +13,7 @@ const char *config_state_nvs_key(const char *s)
 }
 
 template<>
-bool config_state_helper<std::string>::get(const rapidjson::Pointer &ptr, const rapidjson::Value &root, std::string &value)
+bool config_state_helper<std::string>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, std::string &value)
 {
     // Find object
     const rapidjson::Value *obj = ptr.Get(root);
@@ -33,7 +33,7 @@ bool config_state_helper<std::string>::get(const rapidjson::Pointer &ptr, const 
 }
 
 template<>
-void config_state_helper<std::string>::set(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const std::string &value)
+void config_state_helper<std::string>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const std::string &value)
 {
     ptr.Create(root, allocator, nullptr).SetString(value, allocator);
 }
