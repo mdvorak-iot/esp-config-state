@@ -3,7 +3,7 @@
 
 static const char TAG[] = "example";
 
-void app_main()
+extern "C" void app_main()
 {
     lib_example();
 

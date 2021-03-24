@@ -1,6 +1,6 @@
-name: "lib_template"
+name: "config_state"
 description: TODO description.
-url: https://github.com/mdvorak-iot/esp-lib-template.git
+url: https://github.com/mdvorak-iot/esp-config-state.git
 targets:
   - esp32
 dependencies:
