@@ -63,15 +63,15 @@ esp_err_t config_state_helper<std::string>::load(const std::string &key, nvs::NV
     if (err == ESP_OK)
     {
         // Fast path
-        if (len == 0)
+        if (len <= 1) // len includes zero terminator
         {
             value.resize(0);
             return ESP_OK;
         }
 
         // Read and store string
-        std::string tmp(len, '\0');
-        err = handle.get_string(full_key.c_str(), &tmp[0], tmp.length());
+        std::string tmp(len - 1, '\0'); // len includes zero terminator
+        err = handle.get_string(full_key.c_str(), &tmp[0], len);
         if (err == ESP_OK)
         {
             value.swap(tmp); // NOTE this is faster than assign, since it does not copy the bytes
