@@ -1,5 +1,19 @@
-#include "config_state.h"
-#include <string>
+#include "config_state_helper.h"
+#include <cstdarg>
+#include <esp_log.h>
+
+static const char TAG[] = "config_state";
+
+void config_state_logw(const char *format, ...)
+{
+    if (LOG_LOCAL_LEVEL >= ESP_LOG_WARN)
+    {
+        std::va_list arg;
+        va_start(arg, format);
+        esp_log_writev(ESP_LOG_WARN, TAG, format, arg);
+        va_end(arg);
+    }
+}
 
 std::string config_state_nvs_key(const std::string &s)
 {
@@ -67,7 +81,7 @@ esp_err_t config_state_helper<std::string>::load(const std::string &key, nvs::NV
     // For both branches
     if (err != ESP_OK)
     {
-        ESP_LOGW("config_state", "failed to get_string %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
+        ESP_LOGW(TAG, "failed to get_string %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
     }
     return err;
 }
@@ -81,7 +95,7 @@ esp_err_t config_state_helper<std::string>::store(const std::string &key, nvs::N
 
     if (err != ESP_OK)
     {
-        ESP_LOGW("config_state", "failed to set_string %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
+        ESP_LOGW(TAG, "failed to set_string %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
     }
     return err;
 }
@@ -100,7 +114,7 @@ esp_err_t config_state_helper<float>::load(const std::string &key, nvs::NVSHandl
     }
     else
     {
-        ESP_LOGW("config_state", "failed to get_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
+        ESP_LOGW(TAG, "failed to get_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
     }
     return err;
 }
@@ -118,7 +132,7 @@ esp_err_t config_state_helper<float>::store(const std::string &key, nvs::NVSHand
 
     if (err != ESP_OK)
     {
-        ESP_LOGW("config_state", "failed to set_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
+        ESP_LOGW(TAG, "failed to set_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
     }
     return err;
 }
@@ -137,7 +151,7 @@ esp_err_t config_state_helper<double>::load(const std::string &key, nvs::NVSHand
     }
     else
     {
-        ESP_LOGW("config_state", "failed to get_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
+        ESP_LOGW(TAG, "failed to get_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
     }
     return err;
 }
@@ -155,7 +169,7 @@ esp_err_t config_state_helper<double>::store(const std::string &key, nvs::NVSHan
 
     if (err != ESP_OK)
     {
-        ESP_LOGW("config_state", "failed to set_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
+        ESP_LOGW(TAG, "failed to set_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
     }
     return err;
 }

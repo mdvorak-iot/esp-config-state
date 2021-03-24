@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cstring>
-#include <esp_log.h>
-#include <functional>
+#include "config_state_helper.h"
 #include <nvs_handle.hpp>
 #include <rapidjson/pointer.h>
 #include <string>
@@ -10,12 +8,27 @@
 
 // TODO move to namespace
 
-std::string config_state_nvs_key(const std::string &s);
-const char *config_state_nvs_key(const char *s);
+enum config_state_flags
+{
+    config_state_no_flags = 0,
+    config_state_disable_read = 0x01,
+    config_state_disable_write = 0x02,
+    config_state_disable_serialization = config_state_disable_read | config_state_disable_write,
+    config_state_disable_load = 0x10,
+    config_state_disable_store = 0x20,
+    config_state_disable_persistence = config_state_disable_load | config_state_disable_store,
+};
 
 template<typename S>
 struct config_state
 {
+    const config_state_flags flags;
+
+    explicit config_state(config_state_flags flags)
+        : flags(flags)
+    {
+    }
+
     virtual ~config_state() = default;
 
     /**
@@ -25,95 +38,46 @@ struct config_state
      * @param root JSON root object
      * @return true if value has changed, false otherwise
      */
-    virtual bool read(S &inst, const rapidjson::Value &root) const = 0;
-    virtual void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const = 0;
-
-    virtual esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
-    virtual esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
-};
-
-template<typename T>
-struct config_state_helper
-{
-    /**
-     * Gets value from given JSON object root and stores it to this instance.
-     * Ignores invalid value type.
-     *
-     * @param root JSON root object
-     * @param ptr JSON pointer
-     * @param value Value reference
-     * @return true if value has changed, false otherwise
-     */
-    static bool read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, T &value)
+    bool read(S &inst, const rapidjson::Value &root) const
     {
-        // Find object
-        const rapidjson::Value *obj = ptr.Get(root);
-        // Check its type
-        if (obj && obj->Is<T>())
+        if ((flags & config_state_disable_read) == 0)
         {
-            // Get new value
-            T new_value = obj->Get<T>();
-            if (new_value != value)
-            {
-                // If it is different, update
-                value = new_value;
-                return true;
-            }
+            return do_read(inst, root);
         }
         return false;
     }
 
-    static void write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const T &value)
+    void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const
     {
-        ptr.Set<T>(root, value, allocator);
+        if ((flags & config_state_disable_write) == 0)
+        {
+            do_write(inst, root, allocator);
+        }
     }
 
-    static esp_err_t load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, T &value)
+    esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const
     {
-        const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
-        esp_err_t err = handle.get_item<T>(full_key.c_str(), value);
-        if (err != ESP_OK)
+        if ((flags & config_state_disable_load) == 0)
         {
-            ESP_LOGW("config_state", "failed to get_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
+            return do_load(inst, handle, prefix);
         }
-        return err;
+        return ESP_OK;
+    }
+    esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const
+    {
+        if ((flags & config_state_disable_store) == 0)
+        {
+            return do_store(inst, handle, prefix);
+        }
+        return ESP_OK;
     }
 
-    static esp_err_t store(const std::string &key, nvs::NVSHandle &handle, const char *prefix, const T &value)
-    {
-        const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
-        esp_err_t err = handle.set_item<T>(full_key.c_str(), value);
-        if (err != ESP_OK)
-        {
-            ESP_LOGW("config_state", "failed to set_item %s: %d %s", full_key.c_str(), err, esp_err_to_name(err));
-        }
-        return err;
-    }
+    virtual bool do_read(S &inst, const rapidjson::Value &root) const = 0;
+    virtual void do_write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const = 0;
+
+    virtual esp_err_t do_load(S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
+    virtual esp_err_t do_store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const = 0;
 };
-
-template<>
-bool config_state_helper<std::string>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, std::string &value);
-
-template<>
-void config_state_helper<std::string>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const std::string &value);
-
-template<>
-esp_err_t config_state_helper<std::string>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, std::string &value);
-
-template<>
-esp_err_t config_state_helper<std::string>::store(const std::string &key, nvs::NVSHandle &handle, const char *prefix, const std::string &value);
-
-template<>
-esp_err_t config_state_helper<float>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, float &value);
-
-template<>
-esp_err_t config_state_helper<float>::store(const std::string &key, nvs::NVSHandle &handle, const char *prefix, const float &value);
-
-template<>
-esp_err_t config_state_helper<double>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, double &value);
-
-template<>
-esp_err_t config_state_helper<double>::store(const std::string &key, nvs::NVSHandle &handle, const char *prefix, const double &value);
 
 template<typename S, typename T>
 struct config_state_field : config_state<S>
@@ -123,29 +87,35 @@ struct config_state_field : config_state<S>
     T S::*const field;
 
     config_state_field(const char *json_ptr, T S::*field)
-        : ptr(json_ptr),
+        : config_state_field(config_state_no_flags, json_ptr, field)
+    {
+    }
+
+    config_state_field(config_state_flags flags, const char *json_ptr, T S::*field)
+        : config_state<S>(flags),
+          ptr(json_ptr),
           key(json_ptr),
           field(field)
     {
         assert(field);
     }
 
-    bool read(S &inst, const rapidjson::Value &root) const final
+    bool do_read(S &inst, const rapidjson::Value &root) const final
     {
         return config_state_helper<T>::read(ptr, root, inst.*field);
     }
 
-    void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void do_write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         config_state_helper<T>::write(ptr, root, allocator, inst.*field);
     }
 
-    esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::load(key, handle, prefix, inst.*field);
     }
 
-    esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::store(key, handle, prefix, inst.*field);
     }
@@ -158,7 +128,13 @@ struct config_state_value : config_state<T>
     const std::string key;
 
     explicit config_state_value(const char *json_ptr)
-        : ptr(json_ptr),
+        : config_state_value(config_state_no_flags, json_ptr)
+    {
+    }
+
+    config_state_value(config_state_flags flags, const char *json_ptr)
+        : config_state<T>(flags),
+          ptr(json_ptr),
           key(json_ptr)
     {
     }
@@ -168,22 +144,22 @@ struct config_state_value : config_state<T>
     {
     }
 
-    bool read(T &inst, const rapidjson::Value &root) const final
+    bool do_read(T &inst, const rapidjson::Value &root) const final
     {
         return config_state_helper<T>::read(ptr, root, inst);
     }
 
-    void write(const T &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void do_write(const T &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         config_state_helper<T>::write(ptr, root, allocator, inst);
     }
 
-    esp_err_t load(T &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_load(T &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::load(key, handle, prefix, inst);
     }
 
-    esp_err_t store(const T &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_store(const T &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         return config_state_helper<T>::store(key, handle, prefix, inst);
     }
@@ -198,7 +174,13 @@ struct config_state_list : config_state<S>
     const std::unique_ptr<const config_state<T>> element;
 
     config_state_list(const char *json_ptr, std::vector<T> S::*field, const config_state<T> *element)
-        : ptr(json_ptr),
+        : config_state_list(config_state_no_flags, json_ptr, field, element)
+    {
+    }
+
+    config_state_list(config_state_flags flags, const char *json_ptr, std::vector<T> S::*field, const config_state<T> *element)
+        : config_state<S>(flags),
+          ptr(json_ptr),
           key(json_ptr),
           field(field),
           element(element)
@@ -207,7 +189,7 @@ struct config_state_list : config_state<S>
         assert(element);
     }
 
-    bool read(S &inst, const rapidjson::Value &root) const final
+    bool do_read(S &inst, const rapidjson::Value &root) const final
     {
         const rapidjson::Value *list = ptr.Get(root);
         if (!list || !list->IsArray())
@@ -232,7 +214,7 @@ struct config_state_list : config_state<S>
         return changed;
     }
 
-    void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void do_write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         auto &array = ptr.Create(root, allocator);
         if (!array.IsArray())
@@ -262,7 +244,7 @@ struct config_state_list : config_state<S>
         }
     }
 
-    esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         char item_prefix[16] = {};
         if (!prefix) prefix = "";
@@ -291,7 +273,7 @@ struct config_state_list : config_state<S>
         return last_err;
     }
 
-    esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         char item_prefix[16] = {};
         if (!prefix) prefix = "";
@@ -320,7 +302,12 @@ struct config_state_list : config_state<S>
 template<typename S>
 struct config_state_set : config_state<S>
 {
-    config_state_set() = default;
+    explicit config_state_set(config_state_flags flags = config_state_no_flags)
+        : config_state<S>(flags)
+    {
+    }
+
+    // disable copy
     config_state_set(const config_state_set &) = delete;
 
     ~config_state_set() override
@@ -356,7 +343,7 @@ struct config_state_set : config_state<S>
         return add(new config_state_list<S, T>(json_ptr, field, new config_state_value<T>));
     }
 
-    bool read(S &inst, const rapidjson::Value &root) const final
+    bool do_read(S &inst, const rapidjson::Value &root) const final
     {
         bool changed = false;
         for (auto state : states_)
@@ -366,7 +353,7 @@ struct config_state_set : config_state<S>
         return changed;
     }
 
-    void write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
+    void do_write(const S &inst, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator) const final
     {
         for (auto state : states_)
         {
@@ -374,7 +361,7 @@ struct config_state_set : config_state<S>
         }
     }
 
-    esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_load(S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         esp_err_t last_err = ESP_OK;
         for (auto state : states_)
@@ -388,7 +375,7 @@ struct config_state_set : config_state<S>
         return last_err;
     }
 
-    esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
+    esp_err_t do_store(const S &inst, nvs::NVSHandle &handle, const char *prefix) const final
     {
         esp_err_t last_err = ESP_OK;
         for (auto state : states_)
