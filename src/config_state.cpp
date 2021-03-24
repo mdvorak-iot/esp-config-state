@@ -1,6 +1,17 @@
 #include "config_state.h"
 #include <string>
 
+std::string config_state_nvs_key(const std::string &s)
+{
+    return !s.empty() && s[0] == '/' ? s.substr(1, std::string::npos) : s; // Skip leading '/' char
+}
+
+const char *config_state_nvs_key(const char *s)
+{
+    assert(s);
+    return *s == '/' ? s + 1 : s; // Skip leading '/' char
+}
+
 template<>
 bool config_state_helper<std::string>::get(const rapidjson::Pointer &ptr, const rapidjson::Value &root, std::string &value)
 {
@@ -30,7 +41,7 @@ void config_state_helper<std::string>::set(const rapidjson::Pointer &ptr, rapidj
 template<>
 esp_err_t config_state_helper<std::string>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, std::string &value)
 {
-    const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+    const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
 
     // First we need to know stored string length
     size_t len = 0;
@@ -65,7 +76,7 @@ template<>
 esp_err_t config_state_helper<std::string>::store(const std::string &key, nvs::NVSHandle &handle, const char *prefix, const std::string &value)
 {
     // NOTE this will strip string if it contains \0 character
-    const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+    const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
     esp_err_t err = handle.set_string(full_key.c_str(), value.c_str());
 
     if (err != ESP_OK)
@@ -78,7 +89,7 @@ esp_err_t config_state_helper<std::string>::store(const std::string &key, nvs::N
 template<>
 esp_err_t config_state_helper<float>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, float &value)
 {
-    const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+    const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
 
     // NVS does not support floating point, so store it under u32, bit-wise
     uint32_t value_bits = 0;
@@ -99,7 +110,7 @@ esp_err_t config_state_helper<float>::store(const std::string &key, nvs::NVSHand
 {
     static_assert(sizeof(uint32_t) >= sizeof(float));
 
-    const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+    const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
 
     // NVS does not support floating point, so store it under u32, bit-wise
     uint32_t value_bits = *reinterpret_cast<const uint32_t *>(&value);
@@ -115,7 +126,7 @@ esp_err_t config_state_helper<float>::store(const std::string &key, nvs::NVSHand
 template<>
 esp_err_t config_state_helper<double>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, double &value)
 {
-    const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+    const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
 
     // NVS does not support floating point, so store it under u64, bit-wise
     uint64_t value_bits = 0;
@@ -136,7 +147,7 @@ esp_err_t config_state_helper<double>::store(const std::string &key, nvs::NVSHan
 {
     static_assert(sizeof(uint64_t) >= sizeof(double));
 
-    const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+    const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
 
     // NVS does not support floating point, so store it under u64, bit-wise
     uint64_t value_bits = *reinterpret_cast<const uint64_t *>(&value);

@@ -8,17 +8,10 @@
 #include <string>
 #include <vector>
 
-// TODO move to cpp, rename
-inline static std::string nvs_key(const std::string &s)
-{
-    return !s.empty() && s[0] == '/' ? s.substr(1, std::string::npos) : s; // Skip leading '/' char
-}
+// TODO move to namespace
 
-static const char *nvs_key(const char *s)
-{
-    assert(s);
-    return *s == '/' ? s + 1 : s; // Skip leading '/' char
-}
+std::string config_state_nvs_key(const std::string &s);
+const char *config_state_nvs_key(const char *s);
 
 template<typename S>
 struct config_state
@@ -35,7 +28,6 @@ struct config_state
     virtual bool get(const rapidjson::Value &root, S &inst) const = 0;
     virtual void set(rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const S &inst) const = 0;
 
-    // TODO reorder to have prefix last with default value
     virtual esp_err_t load(nvs::NVSHandle &handle, const char *prefix, S &inst) const = 0;
     virtual esp_err_t store(nvs::NVSHandle &handle, const char *prefix, const S &inst) const = 0;
 };
@@ -149,7 +141,7 @@ struct config_state_helper
 
     static esp_err_t load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, T &value)
     {
-        const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+        const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
         esp_err_t err = handle.get_item<T>(full_key.c_str(), value);
         if (err != ESP_OK)
         {
@@ -160,7 +152,7 @@ struct config_state_helper
 
     static esp_err_t store(const std::string &key, nvs::NVSHandle &handle, const char *prefix, const T &value)
     {
-        const std::string full_key = nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
+        const std::string full_key = config_state_nvs_key(prefix && prefix[0] != '\0' ? prefix + key : key);
         esp_err_t err = handle.set_item<T>(full_key.c_str(), value);
         if (err != ESP_OK)
         {
@@ -346,7 +338,7 @@ struct config_state_list : config_state<S>
         // Read length
         std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/len", prefix, key.c_str());
         uint16_t length = 0;
-        handle.get_item(nvs_key(item_prefix), length); // Ignore error
+        handle.get_item(config_state_nvs_key(item_prefix), length); // Ignore error
 
         // Resize
         items.resize(length);
@@ -356,7 +348,7 @@ struct config_state_list : config_state<S>
         for (size_t i = 0; i < items.size(); i++)
         {
             std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%uz", prefix, key.c_str(), i);
-            esp_err_t err = element->load(handle, nvs_key(item_prefix), items[i]);
+            esp_err_t err = element->load(handle, config_state_nvs_key(item_prefix), items[i]);
             if (err != ESP_OK && (err != ESP_ERR_NVS_NOT_FOUND || last_err == ESP_OK)) // Don't overwrite more important error with NOT_FOUND
             {
                 last_err = err;
@@ -374,14 +366,14 @@ struct config_state_list : config_state<S>
 
         // Store length
         std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/len", prefix, key.c_str());
-        handle.set_item(nvs_key(item_prefix), static_cast<uint16_t>(items.size())); // No need to store all 32 bytes, that would never fit in memory
+        handle.set_item(config_state_nvs_key(item_prefix), static_cast<uint16_t>(items.size())); // No need to store all 32 bytes, that would never fit in memory
 
         // Store items
         esp_err_t last_err = ESP_OK;
         for (size_t i = 0; i < items.size(); i++)
         {
             std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%uz", prefix, key.c_str(), i);
-            esp_err_t err = element->store(handle, nvs_key(item_prefix), items[i]);
+            esp_err_t err = element->store(handle, config_state_nvs_key(item_prefix), items[i]);
             if (err != ESP_OK)
             {
                 last_err = err;
