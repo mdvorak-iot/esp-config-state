@@ -1,8 +1,0 @@
-# Custom component config
-menu "config_state"
-    config LIB_EXAMPLE
-        int "Example variable"
-        default 0
-        help
-            Just example, remove this.
-endmenu
