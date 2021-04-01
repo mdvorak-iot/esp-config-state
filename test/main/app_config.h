@@ -12,7 +12,9 @@ struct app_config_obj
 
 struct app_config
 {
-    int num = 0;
+    int integer = 0;
+    float float_num = 0;
+    double number = 0;
     gpio_num_t pin = GPIO_NUM_NC;
     std::string str;
 

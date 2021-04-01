@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15.0)
 
 idf_component_register(
-        SRC_DIRS src
+        SRCS src/config_state_gpio.cpp src/config_state_helper.cpp
         INCLUDE_DIRS include
         REQUIRES log nvs_flash
 )
