@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11.0)
+cmake_minimum_required(VERSION 3.15.0)
 include(FetchContent)
 
 function(ExternalComponent_Get name git_repository git_ref)

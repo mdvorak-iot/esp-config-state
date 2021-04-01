@@ -28,7 +28,7 @@ jobs:
           pip install --upgrade platformio
 
       - name: Check
-        run: platformio check -d example
+        run: platformio check -d test
 
       - name: Build
-        run: platformio run -d example
+        run: platformio run -d test

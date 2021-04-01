@@ -33,7 +33,7 @@ struct config_state
 
     /**
      * Gets value from given JSON object root and stores it to this instance.
-     * Ignores invalid value type.
+     * Ignores invalid values, including wrong type.
      *
      * @param root JSON root object
      * @return true if value has changed, false otherwise

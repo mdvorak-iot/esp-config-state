@@ -11,4 +11,4 @@ const config_state<app_config> *const app_config::STATE =
          .add_field(&app_config::str, "/str")
          .add_value_list(&app_config::num_list, "/num_list")
          .add_value_list(&app_config::str_list, "/str_list")
-         .add_list(&app_config::obj_list, "/obj_list", "/ol", app_config_obj::STATE); // TODO this can corrupt memory
+         .add_list(&app_config::obj_list, "/obj_list", "/ol", app_config_obj::STATE); // TODO resolve somehow ownership problems
