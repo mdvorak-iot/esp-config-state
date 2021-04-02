@@ -8,4 +8,4 @@ add_subdirectory(../libraries/rapidjson ${CMAKE_CURRENT_BINARY_DIR}/rapidjson)
 
 # Project
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(config_state_test)
+project(config_state_sample)
