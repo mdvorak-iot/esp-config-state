@@ -7,14 +7,21 @@ struct app_config_obj
 {
     std::vector<uint32_t> ids;
 
-    static const config_state<app_config_obj> *const STATE;
+    static std::unique_ptr<config_state<app_config_obj>> state()
+    {
+        auto ptr = &(*new config_state_set<app_config_obj>())
+                        .add_value_list(&app_config_obj::ids, "/ids");
+
+        return std::unique_ptr<config_state<app_config_obj>>(ptr);
+    }
 };
 
 struct app_config
 {
-    int integer = 0;
-    float float_num = 0;
-    double number = 0;
+    //uint8_t num_u8 = 0;
+    int num_int = 0;
+    float num_float = 0;
+    double num_double = 0;
     gpio_num_t pin = GPIO_NUM_NC;
     std::string str;
 
@@ -22,5 +29,18 @@ struct app_config
     std::vector<std::string> str_list;
     std::vector<app_config_obj> obj_list;
 
-    static const config_state<app_config> *const STATE;
+    static std::unique_ptr<config_state<app_config>> state()
+    {
+        auto ptr = &(*new config_state_set<app_config>())
+                        .add_field(&app_config::num_int, "/numInt", nullptr, config_state_disable_persistence)
+                        .add_field(&app_config::num_float, "/numFloat", "/float")
+                        .add_field(&app_config::num_double, "/numDouble")
+                        .add_field(&app_config::pin, "/pin")
+                        .add_field(&app_config::str, "/str")
+                        .add_value_list(&app_config::num_list, "/numList")
+                        .add_value_list(&app_config::str_list, "/strList")
+                        .add_list(&app_config::obj_list, "/objList", "/ol", app_config_obj::state());
+
+        return std::unique_ptr<config_state<app_config>>(ptr);
+    }
 };

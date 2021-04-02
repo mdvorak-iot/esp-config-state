@@ -316,27 +316,53 @@ struct config_state_set : config_state<S>
     }
 
     template<typename T>
-    config_state_set &add_field(T S::*field, const char *json_ptr, const char *nvs_key = nullptr, config_state_flags flags = config_state_no_flags)
+    config_state_set &add_field(T S::*field, const char *json_ptr, const char *nvs_key = nullptr, config_state_flags field_flags = config_state_no_flags)
     {
-        return add(new config_state_field<S, T>(field, json_ptr, nvs_key, flags));
+        assert(field);
+        assert(json_ptr);
+        return add(new config_state_field<S, T>(field, json_ptr, nvs_key, field_flags));
     }
 
     template<typename T>
-    config_state_set &add_list(std::vector<T> S::*field, const char *json_ptr, const config_state<T> *element, config_state_flags flags = config_state_no_flags)
+    config_state_set &add_list(std::vector<T> S::*field, const char *json_ptr, const config_state<T> *element, config_state_flags field_flags = config_state_no_flags)
     {
-        return add(new config_state_list<S, T>(field, json_ptr, element, flags));
+        assert(field);
+        assert(json_ptr);
+        assert(element);
+        return add(new config_state_list<S, T>(field, json_ptr, element, field_flags));
     }
 
     template<typename T>
-    config_state_set &add_list(std::vector<T> S::*field, const char *json_ptr, const char *nvs_key, const config_state<T> *element, config_state_flags flags = config_state_no_flags)
+    config_state_set &add_list(std::vector<T> S::*field, const char *json_ptr, std::unique_ptr<config_state<T>> element, config_state_flags field_flags = config_state_no_flags)
     {
-        return add(new config_state_list<S, T>(field, json_ptr, nvs_key, element, flags));
+        assert(field);
+        assert(json_ptr);
+        return add(new config_state_list<S, T>(field, json_ptr, element.release(), field_flags));
     }
 
     template<typename T>
-    config_state_set &add_value_list(std::vector<T> S::*field, const char *json_ptr, const char *nvs_key = nullptr, config_state_flags flags = config_state_no_flags)
+    config_state_set &add_list(std::vector<T> S::*field, const char *json_ptr, const char *nvs_key, const config_state<T> *element, config_state_flags field_flags = config_state_no_flags)
     {
-        return add(new config_state_list<S, T>(field, json_ptr, nvs_key, new config_state_value<T>(flags)));
+        assert(field);
+        assert(json_ptr);
+        assert(element);
+        return add(new config_state_list<S, T>(field, json_ptr, nvs_key, element, field_flags));
+    }
+
+    template<typename T>
+    config_state_set &add_list(std::vector<T> S::*field, const char *json_ptr, const char *nvs_key, std::unique_ptr<config_state<T>> element, config_state_flags field_flags = config_state_no_flags)
+    {
+        assert(field);
+        assert(json_ptr);
+        return add(new config_state_list<S, T>(field, json_ptr, nvs_key, element.release(), field_flags));
+    }
+
+    template<typename T>
+    config_state_set &add_value_list(std::vector<T> S::*field, const char *json_ptr, const char *nvs_key = nullptr, config_state_flags field_flags = config_state_no_flags)
+    {
+        assert(field);
+        assert(json_ptr);
+        return add(new config_state_list<S, T>(field, json_ptr, nvs_key, new config_state_value<T>(field_flags)));
     }
 
     bool do_read(S &inst, const rapidjson::Value &root) const final
