@@ -17,6 +17,20 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Cache pip
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v2
+        with:
+          path: ~/.platformio
+          key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+
       - name: Setup Python
         uses: actions/setup-python@v2.2.1
         with:
@@ -35,5 +49,15 @@ jobs:
       - name: Build
         run: platformio run -d test
 
-#      - name: Test
-#        run: platformio remote test -d example
+      - name: Account Login
+        if: ${{ secrets.PLATFORMIO_AUTH_TOKEN != '' }}
+        run: |
+          platformio account login
+          platformio remote agent list
+          platformio remote device list
+        env:
+          PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
+
+      - name: Test
+        if: ${{ secrets.PLATFORMIO_AUTH_TOKEN != '' }}
+        run: platformio remote test -d example
