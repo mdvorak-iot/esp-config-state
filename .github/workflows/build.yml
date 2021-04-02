@@ -48,15 +48,11 @@ jobs:
       - name: Build
         run: platformio run -d test
 
-      - name: Account Login
-        if: ${{ secrets.PLATFORMIO_AUTH_TOKEN != '' }}
-        run: |
-          platformio account login
-          platformio remote agent list
-          platformio remote device list
-        env:
-          PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
-
-      - name: Test
-        if: ${{ secrets.PLATFORMIO_AUTH_TOKEN != '' }}
-        run: platformio remote test -d example
+#      - name: Test
+#        if: ${{ secrets.PLATFORMIO_AUTH_TOKEN != '' }}
+#        run: |
+#          platformio remote agent list
+#          platformio remote device list
+#          platformio remote test -d example
+#        env:
+#          PLATFORMIO_AUTH_TOKEN: ${{ secrets.PLATFORMIO_AUTH_TOKEN }}
