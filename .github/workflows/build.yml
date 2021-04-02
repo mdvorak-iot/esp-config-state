@@ -46,7 +46,7 @@ jobs:
           platformio check -d example
 
       - name: Build
-        run: platformio run -d test
+        run: platformio run -d example
 
 #      - name: Test
 #        if: ${{ secrets.PLATFORMIO_AUTH_TOKEN != '' }}
