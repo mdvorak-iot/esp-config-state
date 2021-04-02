@@ -44,7 +44,6 @@ jobs:
       - name: Check
         run: |
           platformio check -d example
-          platformio check -d test
 
       - name: Build
         run: platformio run -d test
