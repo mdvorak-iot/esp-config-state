@@ -50,6 +50,12 @@ TEST_CASE("read document", "[json][read]")
     num_list.PushBack(6, doc.GetAllocator());
     doc.AddMember("numList", num_list, doc.GetAllocator());
 
+    rapidjson::Value str_list;
+    str_list.SetArray();
+    str_list.PushBack("a", doc.GetAllocator());
+    str_list.PushBack("b", doc.GetAllocator());
+    doc.AddMember("strList", str_list, doc.GetAllocator());
+
     rapidjson::Value obj_ids;
     obj_ids.SetArray();
     obj_ids.PushBack(55, doc.GetAllocator());
@@ -76,6 +82,9 @@ TEST_CASE("read document", "[json][read]")
     TEST_ASSERT_EQUAL(4, config.num_list[0]);
     TEST_ASSERT_EQUAL(8, config.num_list[1]);
     TEST_ASSERT_EQUAL(6, config.num_list[2]);
+    TEST_ASSERT_EQUAL(2, config.str_list.size());
+    TEST_ASSERT_EQUAL_STRING("a", config.str_list[0].c_str());
+    TEST_ASSERT_EQUAL_STRING("b", config.str_list[1].c_str());
     TEST_ASSERT_EQUAL(1, config.obj_list.size());
     auto &ids = config.obj_list[0].ids;
     TEST_ASSERT_EQUAL(2, ids.size());
@@ -84,4 +93,43 @@ TEST_CASE("read document", "[json][read]")
 
     // Repeated read should be without change
     TEST_ASSERT_FALSE(APP_CONFIG_STATE->read(config, doc));
+}
+
+TEST_CASE("write document", "[json][write]")
+{
+    // Sample
+    app_config config = {};
+    config.num_int = 40;
+    config.num_float = 42.123456;
+    config.num_double = 43.123456;
+    config.pin = GPIO_NUM_22;
+    config.str = "foobar";
+    config.num_list.push_back(4);
+    config.num_list.push_back(8);
+    config.num_list.push_back(6);
+    config.str_list.emplace_back("x");
+    config.str_list.emplace_back("y");
+
+    app_config_obj obj;
+    obj.ids.push_back(55);
+    obj.ids.push_back(88);
+    config.obj_list.push_back(obj);
+
+    // Write
+    rapidjson::Document doc;
+    APP_CONFIG_STATE->write(config, doc, doc.GetAllocator());
+    print_document(doc);
+
+    // Verify
+    TEST_ASSERT_EQUAL(40, doc.HasMember("numInt") && doc["numInt"].IsInt() ? doc["numInt"].GetInt() : 0);
+    TEST_ASSERT_EQUAL(42.123456f, doc.HasMember("numFloat") && doc["numFloat"].IsFloat() ? doc["numFloat"].GetFloat() : 0.0f);
+    TEST_ASSERT_EQUAL(43.123456, doc.HasMember("numDouble") && doc["numDouble"].IsDouble() ? doc["numDouble"].GetDouble() : 0.0);
+    TEST_ASSERT_EQUAL(22, doc.HasMember("pin") && doc["pin"].IsInt() ? doc["pin"].GetInt() : 0);
+    TEST_ASSERT_EQUAL_STRING("foobar", doc.HasMember("str") && doc["str"].IsString() ? doc["str"].GetString() : "");
+    TEST_ASSERT_TRUE(doc.HasMember("numList") && doc["numList"].IsArray());
+    TEST_ASSERT_EQUAL(3, doc["numList"].GetArray().Size());
+    TEST_ASSERT_EQUAL(4, doc["numList"].GetArray()[0].IsInt() ? doc["numList"].GetArray()[0].GetInt() : 0);
+    TEST_ASSERT_EQUAL(8, doc["numList"].GetArray()[1].IsInt() ? doc["numList"].GetArray()[1].GetInt() : 0);
+    TEST_ASSERT_EQUAL(6, doc["numList"].GetArray()[2].IsInt() ? doc["numList"].GetArray()[2].GetInt() : 0);
+    // TODO
 }
