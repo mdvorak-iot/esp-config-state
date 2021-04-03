@@ -75,6 +75,30 @@ template<>
 void config_state_helper<std::string>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const std::string &value);
 
 template<>
+bool config_state_helper<uint8_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, uint8_t &value);
+
+template<>
+void config_state_helper<uint8_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const uint8_t &value);
+
+template<>
+bool config_state_helper<int8_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, int8_t &value);
+
+template<>
+void config_state_helper<int8_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const int8_t &value);
+
+template<>
+bool config_state_helper<uint16_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, uint16_t &value);
+
+template<>
+void config_state_helper<uint16_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const uint16_t &value);
+
+template<>
+bool config_state_helper<int16_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, int16_t &value);
+
+template<>
+void config_state_helper<int16_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const int16_t &value);
+
+template<>
 esp_err_t config_state_helper<std::string>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, std::string &value);
 
 template<>

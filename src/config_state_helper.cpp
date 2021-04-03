@@ -26,6 +26,7 @@ const char *config_state_nvs_key(const char *s)
     return *s == '/' ? s + 1 : s; // Skip leading '/' char
 }
 
+// std::string
 template<>
 bool config_state_helper<std::string>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, std::string &value)
 {
@@ -46,12 +47,122 @@ bool config_state_helper<std::string>::read(const rapidjson::Pointer &ptr, const
     return false;
 }
 
+// std::string
 template<>
 void config_state_helper<std::string>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const std::string &value)
 {
     ptr.Create(root, allocator, nullptr).SetString(value, allocator);
 }
 
+// uint8_t
+template<>
+bool config_state_helper<uint8_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, uint8_t &value)
+{
+    unsigned num = value;
+    if (!config_state_helper<unsigned>::read(ptr, root, num))
+    {
+        // Invalid or unchanged value
+        return false;
+    }
+
+    if (num <= UINT8_MAX && num != value)
+    {
+        value = static_cast<uint8_t>(num);
+        return true;
+    }
+
+    return false;
+}
+
+// uint8_t
+template<>
+void config_state_helper<uint8_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const uint8_t &value)
+{
+    ptr.Create(root, allocator, nullptr).Set(static_cast<unsigned>(value), allocator);
+}
+
+// int8_t
+template<>
+bool config_state_helper<int8_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, int8_t &value)
+{
+    int num = value; // NOLINT(cert-str34-c)
+    if (!config_state_helper<int>::read(ptr, root, num))
+    {
+        // Invalid or unchanged value
+        return false;
+    }
+
+    if (num >= INT8_MIN && num <= INT8_MAX && num != value)
+    {
+        value = static_cast<int8_t>(num);
+        return true;
+    }
+
+    return false;
+}
+
+// int8_t
+template<>
+void config_state_helper<int8_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const int8_t &value)
+{
+    ptr.Create(root, allocator, nullptr).Set(static_cast<int>(value), allocator);
+}
+
+// uint16_t
+template<>
+bool config_state_helper<uint16_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, uint16_t &value)
+{
+    unsigned num = value;
+    if (!config_state_helper<unsigned>::read(ptr, root, num))
+    {
+        // Invalid or unchanged value
+        return false;
+    }
+
+    if (num <= UINT16_MAX && num != value)
+    {
+        value = static_cast<uint16_t>(num);
+        return true;
+    }
+
+    return false;
+}
+
+// uint16_t
+template<>
+void config_state_helper<uint16_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const uint16_t &value)
+{
+    ptr.Create(root, allocator, nullptr).Set(static_cast<unsigned>(value), allocator);
+}
+
+// int16_t
+template<>
+bool config_state_helper<int16_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, int16_t &value)
+{
+    int num = value;
+    if (!config_state_helper<int>::read(ptr, root, num))
+    {
+        // Invalid or unchanged value
+        return false;
+    }
+
+    if (num >= INT16_MIN && num <= INT16_MAX && num != value)
+    {
+        value = static_cast<int16_t>(num);
+        return true;
+    }
+
+    return false;
+}
+
+// int16_t
+template<>
+void config_state_helper<int16_t>::write(const rapidjson::Pointer &ptr, rapidjson::Value &root, rapidjson::Value::AllocatorType &allocator, const int16_t &value)
+{
+    ptr.Create(root, allocator, nullptr).Set(static_cast<int>(value), allocator);
+}
+
+// std::string
 template<>
 esp_err_t config_state_helper<std::string>::load(const std::string &key, nvs::NVSHandle &handle, const char *prefix, std::string &value)
 {

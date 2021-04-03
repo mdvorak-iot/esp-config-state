@@ -18,7 +18,12 @@ struct app_config_obj
 
 struct app_config
 {
-    //uint8_t num_u8 = 0;
+    int8_t num_i8 = 0;
+    uint8_t num_u8 = 0;
+    int16_t num_i16 = 0;
+    uint16_t num_u16 = 0;
+    int32_t num_i32 = 0;
+    uint32_t num_u32 = 0;
     int num_int = 0;
     float num_float = 0;
     double num_double = 0;
@@ -32,6 +37,12 @@ struct app_config
     static std::unique_ptr<config_state<app_config>> state()
     {
         auto ptr = &(*new config_state_set<app_config>())
+                        .add_field(&app_config::num_i8, "/numI8")
+                        .add_field(&app_config::num_u8, "/numU8")
+                        .add_field(&app_config::num_i16, "/numI16")
+                        .add_field(&app_config::num_u16, "/numU16")
+                        .add_field(&app_config::num_i32, "/numI32")
+                        .add_field(&app_config::num_u32, "/numU32")
                         .add_field(&app_config::num_int, "/numInt", nullptr, config_state_disable_persistence)
                         .add_field(&app_config::num_float, "/numFloat", "/float")
                         .add_field(&app_config::num_double, "/numDouble")

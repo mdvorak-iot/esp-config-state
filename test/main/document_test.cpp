@@ -21,22 +21,30 @@ static void print_document(const rapidjson::Document &doc)
 
 TEST_CASE("read empty document", "[json][read]")
 {
-    app_config config = {};
     rapidjson::Document doc;
     doc.SetObject();
 
     print_document(doc);
 
+    // Test
+    app_config config = {};
     config.num_int = 21;
     TEST_ASSERT_FALSE(APP_CONFIG_STATE->read(config, doc));
+
+    // Verify
     TEST_ASSERT_EQUAL(21, config.num_int);
 }
 
 TEST_CASE("read document", "[json][read]")
 {
-    app_config config = {};
     rapidjson::Document doc;
     doc.SetObject();
+    doc.AddMember("numI8", 7, doc.GetAllocator());
+    doc.AddMember("numU8", 8, doc.GetAllocator());
+    doc.AddMember("numI16", 15, doc.GetAllocator());
+    doc.AddMember("numU16", 16, doc.GetAllocator());
+    doc.AddMember("numI32", 31, doc.GetAllocator());
+    doc.AddMember("numU32", 32, doc.GetAllocator());
     doc.AddMember("numInt", 41, doc.GetAllocator());
     doc.AddMember("numFloat", 42.123456, doc.GetAllocator());
     doc.AddMember("numDouble", 43.123456, doc.GetAllocator());
@@ -72,7 +80,17 @@ TEST_CASE("read document", "[json][read]")
 
     print_document(doc);
 
+    // Test
+    app_config config = {};
     TEST_ASSERT_TRUE(APP_CONFIG_STATE->read(config, doc));
+
+    // Verify
+    TEST_ASSERT_EQUAL(7, config.num_i8);
+    TEST_ASSERT_EQUAL(8, config.num_u8);
+    TEST_ASSERT_EQUAL(15, config.num_i16);
+    TEST_ASSERT_EQUAL(16, config.num_u16);
+    TEST_ASSERT_EQUAL(31, config.num_i32);
+    TEST_ASSERT_EQUAL(32, config.num_u32);
     TEST_ASSERT_EQUAL(41, config.num_int);
     TEST_ASSERT_EQUAL(42.123456, config.num_float);
     TEST_ASSERT_EQUAL(43.123456, config.num_double);
@@ -95,10 +113,70 @@ TEST_CASE("read document", "[json][read]")
     TEST_ASSERT_FALSE(APP_CONFIG_STATE->read(config, doc));
 }
 
+TEST_CASE("read small numbers out of range (max)", "[json][read]")
+{
+    rapidjson::Document doc;
+    doc.SetObject();
+    doc.AddMember("numI8", (int)INT8_MAX + 1, doc.GetAllocator());
+    doc.AddMember("numU8", (int)UINT8_MAX + 1, doc.GetAllocator());
+    doc.AddMember("numI16", (int)INT16_MAX + 1, doc.GetAllocator());
+    doc.AddMember("numU16", (int)UINT16_MAX + 1, doc.GetAllocator());
+
+    print_document(doc);
+
+    // Test
+    app_config config = {};
+    config.num_i8 = 7;
+    config.num_u8 = 8;
+    config.num_i16 = 15;
+    config.num_u16 = 16;
+
+    TEST_ASSERT_FALSE(APP_CONFIG_STATE->read(config, doc));
+
+    // Verify
+    TEST_ASSERT_EQUAL(7, config.num_i8);
+    TEST_ASSERT_EQUAL(8, config.num_u8);
+    TEST_ASSERT_EQUAL(15, config.num_i16);
+    TEST_ASSERT_EQUAL(16, config.num_u16);
+}
+
+TEST_CASE("read small numbers out of range (min)", "[json][read]")
+{
+    rapidjson::Document doc;
+    doc.SetObject();
+    doc.AddMember("numI8", (int)INT8_MIN - 1, doc.GetAllocator());
+    doc.AddMember("numU8", -1, doc.GetAllocator());
+    doc.AddMember("numI16", (int)INT16_MIN - 1, doc.GetAllocator());
+    doc.AddMember("numU16", -1, doc.GetAllocator());
+
+    print_document(doc);
+
+    // Test
+    app_config config = {};
+    config.num_i8 = 7;
+    config.num_u8 = 8;
+    config.num_i16 = 15;
+    config.num_u16 = 16;
+
+    TEST_ASSERT_FALSE(APP_CONFIG_STATE->read(config, doc));
+
+    // Verify
+    TEST_ASSERT_EQUAL(7, config.num_i8);
+    TEST_ASSERT_EQUAL(8, config.num_u8);
+    TEST_ASSERT_EQUAL(15, config.num_i16);
+    TEST_ASSERT_EQUAL(16, config.num_u16);
+}
+
 TEST_CASE("write document", "[json][write]")
 {
     // Sample
     app_config config = {};
+    config.num_i8 = 7;
+    config.num_u8 = 8;
+    config.num_i16 = 15;
+    config.num_u16 = 16;
+    config.num_i32 = 31;
+    config.num_u32 = 32;
     config.num_int = 40;
     config.num_float = 42.123456;
     config.num_double = 43.123456;
@@ -121,6 +199,12 @@ TEST_CASE("write document", "[json][write]")
     print_document(doc);
 
     // Verify
+    TEST_ASSERT_EQUAL(7, doc.HasMember("numI8") && doc["numI8"].IsInt() ? doc["numI8"].GetInt() : 0);
+    TEST_ASSERT_EQUAL(8, doc.HasMember("numU8") && doc["numU8"].IsInt() ? doc["numU8"].GetInt() : 0);
+    TEST_ASSERT_EQUAL(15, doc.HasMember("numI16") && doc["numI16"].IsInt() ? doc["numI16"].GetInt() : 0);
+    TEST_ASSERT_EQUAL(16, doc.HasMember("numU16") && doc["numU16"].IsInt() ? doc["numU16"].GetInt() : 0);
+    TEST_ASSERT_EQUAL(31, doc.HasMember("numI32") && doc["numI32"].IsInt() ? doc["numI32"].GetInt() : 0);
+    TEST_ASSERT_EQUAL(32, doc.HasMember("numU32") && doc["numU32"].IsInt() ? doc["numU32"].GetInt() : 0);
     TEST_ASSERT_EQUAL(40, doc.HasMember("numInt") && doc["numInt"].IsInt() ? doc["numInt"].GetInt() : 0);
     TEST_ASSERT_EQUAL(42.123456f, doc.HasMember("numFloat") && doc["numFloat"].IsFloat() ? doc["numFloat"].GetFloat() : 0.0f);
     TEST_ASSERT_EQUAL(43.123456, doc.HasMember("numDouble") && doc["numDouble"].IsDouble() ? doc["numDouble"].GetDouble() : 0.0);
