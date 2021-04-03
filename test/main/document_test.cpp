@@ -199,7 +199,7 @@ TEST_CASE("read invalid gpio", "[json][read]")
 
 TEST_CASE("write document", "[json][write]")
 {
-    // Sample
+    // Data
     app_config config = {};
     config.num_i8 = 7;
     config.num_u8 = 8;
