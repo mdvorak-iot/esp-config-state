@@ -126,10 +126,23 @@ TEST_CASE("write document", "[json][write]")
     TEST_ASSERT_EQUAL(43.123456, doc.HasMember("numDouble") && doc["numDouble"].IsDouble() ? doc["numDouble"].GetDouble() : 0.0);
     TEST_ASSERT_EQUAL(22, doc.HasMember("pin") && doc["pin"].IsInt() ? doc["pin"].GetInt() : 0);
     TEST_ASSERT_EQUAL_STRING("foobar", doc.HasMember("str") && doc["str"].IsString() ? doc["str"].GetString() : "");
+
     TEST_ASSERT_TRUE(doc.HasMember("numList") && doc["numList"].IsArray());
     TEST_ASSERT_EQUAL(3, doc["numList"].GetArray().Size());
     TEST_ASSERT_EQUAL(4, doc["numList"].GetArray()[0].IsInt() ? doc["numList"].GetArray()[0].GetInt() : 0);
     TEST_ASSERT_EQUAL(8, doc["numList"].GetArray()[1].IsInt() ? doc["numList"].GetArray()[1].GetInt() : 0);
     TEST_ASSERT_EQUAL(6, doc["numList"].GetArray()[2].IsInt() ? doc["numList"].GetArray()[2].GetInt() : 0);
-    // TODO
+
+    TEST_ASSERT_TRUE(doc.HasMember("strList") && doc["strList"].IsArray());
+    TEST_ASSERT_EQUAL(2, doc["strList"].GetArray().Size());
+    TEST_ASSERT_EQUAL_STRING("x", doc["strList"].GetArray()[0].IsString() ? doc["strList"].GetArray()[0].GetString() : "");
+    TEST_ASSERT_EQUAL_STRING("y", doc["strList"].GetArray()[1].IsString() ? doc["strList"].GetArray()[1].GetString() : "");
+
+    TEST_ASSERT_TRUE(doc.HasMember("objList") && doc["objList"].IsArray());
+    TEST_ASSERT_EQUAL(1, doc["objList"].GetArray().Size());
+    auto &obj_obj = doc["objList"].GetArray()[0];
+    TEST_ASSERT_TRUE(obj_obj.HasMember("ids") && obj_obj["ids"].IsArray());
+    TEST_ASSERT_EQUAL(2, obj_obj["ids"].GetArray().Size());
+    TEST_ASSERT_EQUAL(55, obj_obj["ids"].GetArray()[0].IsInt() ? obj_obj["ids"].GetArray()[0].GetInt() : 0);
+    TEST_ASSERT_EQUAL(88, obj_obj["ids"].GetArray()[1].IsInt() ? obj_obj["ids"].GetArray()[1].GetInt() : 0);
 }
