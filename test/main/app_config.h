@@ -27,6 +27,7 @@ struct app_config
     int num_int = 0;
     float num_float = 0;
     double num_double = 0;
+    bool boolean = false;
     gpio_num_t pin = GPIO_NUM_NC;
     std::string str;
 
@@ -46,6 +47,7 @@ struct app_config
                         .add_field(&app_config::num_int, "/numInt", nullptr, config_state_disable_persistence)
                         .add_field(&app_config::num_float, "/numFloat", "/float")
                         .add_field(&app_config::num_double, "/numDouble")
+                        .add_field(&app_config::boolean, "/boolean")
                         .add_field(&app_config::pin, "/pin")
                         .add_field(&app_config::str, "/str")
                         .add_value_list(&app_config::num_list, "/numList")

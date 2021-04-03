@@ -48,6 +48,7 @@ TEST_CASE("read document", "[json][read]")
     doc.AddMember("numInt", 41, doc.GetAllocator());
     doc.AddMember("numFloat", 42.123456, doc.GetAllocator());
     doc.AddMember("numDouble", 43.123456, doc.GetAllocator());
+    doc.AddMember("boolean", true, doc.GetAllocator());
     doc.AddMember("pin", 22, doc.GetAllocator());
     doc.AddMember("str", "foobar", doc.GetAllocator());
 
@@ -94,6 +95,7 @@ TEST_CASE("read document", "[json][read]")
     TEST_ASSERT_EQUAL(41, config.num_int);
     TEST_ASSERT_EQUAL(42.123456, config.num_float);
     TEST_ASSERT_EQUAL(43.123456, config.num_double);
+    TEST_ASSERT_EQUAL(true, config.boolean);
     TEST_ASSERT_EQUAL(22, config.pin);
     TEST_ASSERT_EQUAL_STRING("foobar", config.str.c_str());
     TEST_ASSERT_EQUAL(3, config.num_list.size());
@@ -208,6 +210,7 @@ TEST_CASE("write document", "[json][write]")
     config.num_int = 40;
     config.num_float = 42.123456;
     config.num_double = 43.123456;
+    config.boolean = true;
     config.pin = GPIO_NUM_22;
     config.str = "foobar";
     config.num_list.push_back(4);
@@ -236,6 +239,7 @@ TEST_CASE("write document", "[json][write]")
     TEST_ASSERT_EQUAL(40, doc.HasMember("numInt") && doc["numInt"].IsInt() ? doc["numInt"].GetInt() : 0);
     TEST_ASSERT_EQUAL(42.123456f, doc.HasMember("numFloat") && doc["numFloat"].IsFloat() ? doc["numFloat"].GetFloat() : 0.0f);
     TEST_ASSERT_EQUAL(43.123456, doc.HasMember("numDouble") && doc["numDouble"].IsDouble() ? doc["numDouble"].GetDouble() : 0.0);
+    TEST_ASSERT_EQUAL(true, doc.HasMember("boolean") && doc["boolean"].IsBool() ? doc["boolean"].GetBool() : false);
     TEST_ASSERT_EQUAL(22, doc.HasMember("pin") && doc["pin"].IsInt() ? doc["pin"].GetInt() : 0);
     TEST_ASSERT_EQUAL_STRING("foobar", doc.HasMember("str") && doc["str"].IsString() ? doc["str"].GetString() : "");
 
