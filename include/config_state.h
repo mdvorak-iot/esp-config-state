@@ -53,6 +53,11 @@ struct config_state
         }
     }
 
+    esp_err_t load(S &inst, const std::unique_ptr<nvs::NVSHandle> &handle, const char *prefix = nullptr) const
+    {
+        return load(inst, *handle, prefix);
+    }
+
     esp_err_t load(S &inst, nvs::NVSHandle &handle, const char *prefix = nullptr) const
     {
         if ((flags & config_state_disable_load) == 0)
@@ -61,6 +66,12 @@ struct config_state
         }
         return ESP_OK;
     }
+
+    esp_err_t store(S &inst, const std::unique_ptr<nvs::NVSHandle> &handle, const char *prefix = nullptr) const
+    {
+        return store(inst, *handle, prefix);
+    }
+
     esp_err_t store(const S &inst, nvs::NVSHandle &handle, const char *prefix = nullptr) const
     {
         if ((flags & config_state_disable_store) == 0)
