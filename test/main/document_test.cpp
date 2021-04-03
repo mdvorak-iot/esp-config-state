@@ -262,3 +262,5 @@ TEST_CASE("write document", "[json][write]")
     TEST_ASSERT_EQUAL(55, obj_obj["ids"].GetArray()[0].IsInt() ? obj_obj["ids"].GetArray()[0].GetInt() : 0);
     TEST_ASSERT_EQUAL(88, obj_obj["ids"].GetArray()[1].IsInt() ? obj_obj["ids"].GetArray()[1].GetInt() : 0);
 }
+
+// TODO test flags
