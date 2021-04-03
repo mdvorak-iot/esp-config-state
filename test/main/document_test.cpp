@@ -167,6 +167,34 @@ TEST_CASE("read small numbers out of range (min)", "[json][read]")
     TEST_ASSERT_EQUAL(16, config.num_u16);
 }
 
+TEST_CASE("read invalid gpio", "[json][read]")
+{
+    rapidjson::Document doc;
+    doc.SetObject();
+    doc.AddMember("nc", (int)GPIO_NUM_NC, doc.GetAllocator());
+    doc.AddMember("low", -2, doc.GetAllocator());
+    doc.AddMember("high", (int)GPIO_NUM_MAX, doc.GetAllocator());
+    doc.AddMember("invalid", 24, doc.GetAllocator());
+
+    print_document(doc);
+
+    // Test
+    config_state_value<gpio_num_t> nc_state("/nc");
+    config_state_value<gpio_num_t> too_low_state("/low");
+    config_state_value<gpio_num_t> too_high_state("/high");
+    config_state_value<gpio_num_t> invalid_state("/invalid");
+
+    // Verify
+    gpio_num_t val = GPIO_NUM_MAX;
+    TEST_ASSERT_TRUE(nc_state.read(val, doc));
+    TEST_ASSERT_EQUAL(GPIO_NUM_NC, val);
+
+    TEST_ASSERT_FALSE(too_low_state.read(val, doc));
+    TEST_ASSERT_FALSE(too_high_state.read(val, doc));
+    TEST_ASSERT_FALSE(invalid_state.read(val, doc));
+    TEST_ASSERT_EQUAL(GPIO_NUM_NC, val); // unchanged
+}
+
 TEST_CASE("write document", "[json][write]")
 {
     // Sample

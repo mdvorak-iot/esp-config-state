@@ -1,13 +1,22 @@
 #include "config_state_gpio.h"
 
+static inline bool is_valid_gpio(int gpio_num)
+{
+    return gpio_num == GPIO_NUM_NC || (gpio_num >= 0 && GPIO_IS_VALID_GPIO(gpio_num));
+}
+
 template<>
 bool config_state_helper<gpio_num_t>::read(const rapidjson::Pointer &ptr, const rapidjson::Value &root, gpio_num_t &value)
 {
     int num = value;
     bool changed = config_state_helper<int>::read(ptr, root, num);
-    // TODO validate pin?
-    value = static_cast<gpio_num_t>(num);
-    return changed;
+    if (changed && is_valid_gpio(num))
+    {
+        value = static_cast<gpio_num_t>(num);
+        return true;
+    }
+
+    return false;
 }
 
 template<>
