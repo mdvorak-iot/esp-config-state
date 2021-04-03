@@ -11,10 +11,10 @@ struct sample_config
         return std::unique_ptr<config_state<sample_config>>(ptr);
     }
 
-    static const std::unique_ptr<config_state<sample_config>> STATE;
+    static const std::unique_ptr<const config_state<sample_config>> STATE;
 };
 
-const std::unique_ptr<config_state<sample_config>> sample_config::STATE = sample_config::state();
+const std::unique_ptr<const config_state<sample_config>> sample_config::STATE = sample_config::state();
 
 extern "C" void app_main()
 {
