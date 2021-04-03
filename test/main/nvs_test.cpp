@@ -2,7 +2,16 @@
 #include <nvs_flash.h>
 #include <unity.h>
 
+static const char NVS_TEST_NAMESPACE[] = "unit_test";
 static const std::unique_ptr<config_state<app_config>> APP_CONFIG_STATE = app_config::state();
+
+extern "C" void test_nvs_cleanup()
+{
+    esp_err_t err = ESP_FAIL;
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle(NVS_TEST_NAMESPACE, NVS_READWRITE, &err);
+    ESP_ERROR_CHECK(handle->erase_all());
+    ESP_ERROR_CHECK(handle->commit());
+}
 
 extern "C" void include_nvs_test()
 {
@@ -18,8 +27,11 @@ extern "C" void include_nvs_test()
 
 TEST_CASE("load empty config", "[nvs][load]")
 {
+    // Setup
+    test_nvs_cleanup();
+
     esp_err_t err = ESP_OK;
-    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("unit_test", NVS_READWRITE, &err);
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle(NVS_TEST_NAMESPACE, NVS_READWRITE, &err);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_NOT_NULL(handle.get());
 
@@ -34,11 +46,15 @@ TEST_CASE("load empty config", "[nvs][load]")
 
 TEST_CASE("load full config", "[nvs][load]")
 {
+    // Setup
+    test_nvs_cleanup();
+
     esp_err_t err = ESP_OK;
-    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("unit_test", NVS_READWRITE, &err);
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle(NVS_TEST_NAMESPACE, NVS_READWRITE, &err);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_NOT_NULL(handle.get());
 
+    // Data
     handle->set_item<int8_t>("numI8", -1);
     handle->set_item<uint8_t>("numU8", 2);
     handle->set_item<int16_t>("numI16", -3);
@@ -56,7 +72,7 @@ TEST_CASE("load full config", "[nvs][load]")
     handle->set_item<uint16_t>("numList/len", 2);
     handle->set_item<int>("numList/0", 10);
     handle->set_item<int>("numList/1", 11);
-    handle->set_item<int>("numList/2", 12);
+    handle->set_item<int>("numList/2", 12); // extra value should be ignored
     handle->set_item<uint16_t>("strList/len", 1);
     handle->set_string("strList/0", "goo");
     handle->set_item<uint16_t>("ol/len", 1); // custom key
@@ -75,15 +91,14 @@ TEST_CASE("load full config", "[nvs][load]")
     TEST_ASSERT_EQUAL(4, config.num_u16);
     TEST_ASSERT_EQUAL(-5, config.num_i32);
     TEST_ASSERT_EQUAL(6, config.num_u32);
-    TEST_ASSERT_EQUAL(-7, config.num_int);
+    TEST_ASSERT_EQUAL(0, config.num_int); // disabled persistence for this field
     TEST_ASSERT_EQUAL(8.5f, config.num_float);
     TEST_ASSERT_EQUAL(9.5, config.num_double);
     TEST_ASSERT_EQUAL(true, config.boolean);
     TEST_ASSERT_EQUAL(22, config.pin);
-    TEST_ASSERT_EQUAL(3, config.num_list.size());
+    TEST_ASSERT_EQUAL(2, config.num_list.size());
     TEST_ASSERT_EQUAL(10, config.num_list[0]);
     TEST_ASSERT_EQUAL(11, config.num_list[1]);
-    TEST_ASSERT_EQUAL(12, config.num_list[2]);
     TEST_ASSERT_EQUAL(1, config.str_list.size());
     TEST_ASSERT_EQUAL_STRING("goo", config.str_list[0].c_str());
     TEST_ASSERT_EQUAL(1, config.obj_list.size());
@@ -94,8 +109,11 @@ TEST_CASE("load full config", "[nvs][load]")
 
 TEST_CASE("check store error", "[nvs][store]")
 {
+    // Setup
+    test_nvs_cleanup();
+
     esp_err_t err = ESP_OK;
-    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle("unit_test", NVS_READWRITE, &err);
+    std::unique_ptr<nvs::NVSHandle> handle = nvs::open_nvs_handle(NVS_TEST_NAMESPACE, NVS_READWRITE, &err);
     TEST_ASSERT_EQUAL(ESP_OK, err);
     TEST_ASSERT_NOT_NULL(handle.get());
 
