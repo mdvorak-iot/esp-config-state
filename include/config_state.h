@@ -272,7 +272,7 @@ struct config_state_list : config_state<S>
         esp_err_t last_err = ESP_OK;
         for (size_t i = 0; i < items.size(); i++)
         {
-            std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%uz", prefix, key.c_str(), i);
+            std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%zu", prefix, key.c_str(), i);
             esp_err_t err = element->load(items[i], handle, config_state_nvs_key(item_prefix));
             if (err != ESP_OK && (err != ESP_ERR_NVS_NOT_FOUND || last_err == ESP_OK)) // Don't overwrite more important error with NOT_FOUND
             {
@@ -297,7 +297,7 @@ struct config_state_list : config_state<S>
         esp_err_t last_err = ESP_OK;
         for (size_t i = 0; i < items.size(); i++)
         {
-            std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%uz", prefix, key.c_str(), i);
+            std::snprintf(item_prefix, sizeof(item_prefix) - 1, "%s%s/%zu", prefix, key.c_str(), i);
             esp_err_t err = element->store(items[i], handle, config_state_nvs_key(item_prefix));
             if (err != ESP_OK)
             {
