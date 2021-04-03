@@ -1,6 +1,6 @@
 {
     "name": "esp-config-state",
-    "description": "TODO",
+    "description": "Simple C++ serialization library for application configurations, with JSON and NVS support.",
     "keywords": "esp esp32",
     "repository": {
         "type": "git",

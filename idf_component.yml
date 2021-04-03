@@ -1,5 +1,5 @@
 name: "config_state"
-description: TODO description.
+description: Simple C++ serialization library for application configurations, with JSON and NVS support.
 url: https://github.com/mdvorak-iot/esp-config-state.git
 targets:
   - esp32
