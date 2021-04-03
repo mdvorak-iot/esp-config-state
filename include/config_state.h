@@ -55,6 +55,11 @@ struct config_state
 
     esp_err_t load(S &inst, const std::unique_ptr<nvs::NVSHandle> &handle, const char *prefix = nullptr) const
     {
+        if (!handle)
+        {
+            return ESP_ERR_NVS_INVALID_HANDLE;
+        }
+
         return load(inst, *handle, prefix);
     }
 
@@ -69,6 +74,11 @@ struct config_state
 
     esp_err_t store(S &inst, const std::unique_ptr<nvs::NVSHandle> &handle, const char *prefix = nullptr) const
     {
+        if (!handle)
+        {
+            return ESP_ERR_NVS_INVALID_HANDLE;
+        }
+
         return store(inst, *handle, prefix);
     }
 
