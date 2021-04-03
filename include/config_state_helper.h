@@ -4,11 +4,19 @@
 #include <rapidjson/pointer.h>
 #include <string>
 
+// internal helper functions
 __attribute__((format(printf, 1, 2))) void config_state_logw(const char *format, ...);
 
 std::string config_state_nvs_key(const std::string &s);
 const char *config_state_nvs_key(const char *s);
 
+/**
+ * Serialization and deserialization logic, with custom implementations for standard types.
+ *
+ * Should not be used directly, it is used by other config_state classes.
+ *
+ * @tparam T Any supported serialization type.
+ */
 template<typename T>
 struct config_state_helper
 {

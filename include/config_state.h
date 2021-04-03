@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-// TODO move to namespace
-
 enum config_state_flags
 {
     config_state_no_flags = 0,
