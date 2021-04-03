@@ -2,10 +2,12 @@
 #include <unity.h>
 
 void include_json_test();
+void include_nvs_test();
 
 void app_main()
 {
     include_json_test();
+    include_nvs_test();
 
     UNITY_BEGIN();
     unity_run_all_tests();
